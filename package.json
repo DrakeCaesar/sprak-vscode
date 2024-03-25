@@ -10,16 +10,26 @@
     "Programming Languages"
   ],
   "contributes": {
-    "languages": [{
-      "id": "sprak",
-      "aliases": ["Språk", "sprak"],
-      "extensions": [".sprak",".spk"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "sprak",
-      "scopeName": "source.sprak",
-      "path": "./syntaxes/sprak.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "sprak",
+        "aliases": [
+          "Språk",
+          "sprak"
+        ],
+        "extensions": [
+          ".sprak",
+          ".spk"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "sprak",
+        "scopeName": "source.sprak",
+        "path": "./syntaxes/sprak.tmLanguage.json"
+      }
+    ]
   }
 }
