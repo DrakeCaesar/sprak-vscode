@@ -1,0 +1,25 @@
+{
+  "name": "sprak",
+  "displayName": "sprak",
+  "description": "Syntax highlighting and code compeletion for Språk",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.87.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "sprak",
+      "aliases": ["Språk", "sprak"],
+      "extensions": [".sprak",".spk"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "sprak",
+      "scopeName": "source.sprak",
+      "path": "./syntaxes/sprak.tmLanguage.json"
+    }]
+  }
+}
