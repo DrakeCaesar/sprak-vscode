@@ -28,6 +28,16 @@
       "match": "\\b(\\d(\\.\\d)?)+"
     },
     {
+      "comment": "Boolean Literal",
+      "name": "constant.language.boolean.sprak",
+      "match": "\\b(true|false)\\b"
+    },
+    {
+      "comment": "Data Types",
+      "name": "storage.type.sprak",
+      "match": "\\b(string|void|var|number|array|bool)\\b"
+    },
+    {
       "comment": "Global",
       "name": "constant.global.sprak",
       "match": "\\b\\w+\\$"

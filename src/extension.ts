@@ -29,7 +29,6 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
 
     context.subscriptions.push(hoverProvider);
 
-    // Register the formatter
     const formatterProvider =
       vscode.languages.registerDocumentFormattingEditProvider("sprak", {
         provideDocumentFormattingEdits(
@@ -37,31 +36,37 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
         ): vscode.TextEdit[] {
           const edits: vscode.TextEdit[] = [];
           let indentLevel = 0;
-          const indentSize = 2; // This could be adjusted as needed
+          const indentSize = 2; // This can be adjusted as needed
 
           for (let i = 0; i < document.lineCount; i++) {
-            const lineText = document.lineAt(i).text;
-            const trimmedLine = lineText.trim();
+            const line = document.lineAt(i);
+            const lineText = line.text;
+            const trimmedLine = processLineContent(lineText.trim());
 
-            // Decrease indent level for 'end' or 'else' lines but delay the change until after processing the current line
-            if (trimmedLine.match(/^(end|else)/)) {
+            // Decrease indent level for 'end' or 'else'
+            if (
+              trimmedLine.startsWith("end") ||
+              trimmedLine.startsWith("else")
+            ) {
               indentLevel = Math.max(indentLevel - 1, 0);
             }
 
-            // Adjust the indentation of the current line based on the current indent level
+            // Compute the adjusted indentation
+            const adjustedIndentation = " ".repeat(indentLevel * indentSize);
+
+            // Combine adjusted indentation with processed line content
+            const processedLine = adjustedIndentation + trimmedLine;
+
+            // Replace the entire line with the processed content
+            // Replace the entire line with the processed content
             edits.push(
               vscode.TextEdit.replace(
-                new vscode.Range(
-                  i,
-                  0,
-                  i,
-                  document.lineAt(i).firstNonWhitespaceCharacterIndex,
-                ),
-                " ".repeat(indentLevel * indentSize),
+                new vscode.Range(i, 0, i, lineText.length),
+                processedLine,
               ),
             );
 
-            // Increase indent level for lines that start a block structure
+            // Increase indent level for block-starting structures
             if (shouldIncreaseIndent(trimmedLine)) {
               indentLevel++;
             }
@@ -72,7 +77,60 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
       });
 
     context.subscriptions.push(formatterProvider);
+    context.subscriptions.push(
+      vscode.languages.registerFoldingRangeProvider(
+        { language: "sprak" },
+        new MyFoldingRangeProvider(),
+      ),
+    );
   });
+}
+
+function processLineContent(line: string): string {
+  let inString = false;
+  let result = "";
+  let comment = ""; // Variable to hold the comment
+  let foundComment = false; // Flag to indicate a comment has been found
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+    const isStringDelimiter = char === '"' || char === "'";
+
+    // Toggle the in-string flag if we encounter a string delimiter that isn't escaped
+    if (isStringDelimiter && (i === 0 || line[i - 1] !== "\\")) {
+      inString = !inString;
+    }
+
+    if (char === "#" && !inString) {
+      foundComment = true; // Indicate that the rest of the line is a comment
+      continue; // Skip appending the # to result but start appending to comment
+    }
+
+    // If a comment has been found, append characters to the comment instead of the result
+    if (foundComment) {
+      comment += char;
+    } else {
+      // If we're not in a string, skip over multiple spaces in a row
+      if (!inString && char === " " && nextChar === " ") {
+        continue;
+      } else {
+        result += char;
+      }
+    }
+  }
+
+  // Remove trailing spaces from the result and then append the comment (if any)
+  result = result.replace(/\s+$/, "");
+  if (foundComment) {
+    // Ensure we're not adding extra spaces before the comment if the result is empty
+    if (result !== "") {
+      result += " "; // Add a space before the comment for readability
+    }
+    result += "#" + comment; // Append the comment including the '#' character
+  }
+
+  return result;
 }
 
 function shouldIncreaseIndent(line: string): boolean {
@@ -90,3 +148,77 @@ module.exports = {
   activate,
   deactivate,
 };
+
+class MyFoldingRangeProvider implements vscode.FoldingRangeProvider {
+  provideFoldingRanges(
+    document: vscode.TextDocument,
+    context: vscode.FoldingContext,
+    token: vscode.CancellationToken,
+  ): vscode.ProviderResult<vscode.FoldingRange[]> {
+    // Array to store folding ranges
+    const foldingRanges: vscode.FoldingRange[] = [];
+
+    // Stack to keep track of indentation levels
+    const stack: { level: number; startLine: number }[] = [];
+
+    // Iterate through each line in the document
+    for (let lineNumber = 0; lineNumber < document.lineCount; lineNumber++) {
+      const line = document.lineAt(lineNumber);
+      const lineText = line.text.trim();
+
+      // Skip empty lines
+      if (lineText === "") continue;
+
+      // Get the indentation level of the line
+      const indentationLevel = line.firstNonWhitespaceCharacterIndex;
+
+      // Check if the stack is empty or the current level is greater than the top level in the stack
+      if (
+        stack.length === 0 ||
+        indentationLevel > stack[stack.length - 1].level
+      ) {
+        // Push the current level to the stack
+        stack.push({ level: indentationLevel, startLine: lineNumber });
+      } else {
+        // Pop elements from the stack until a level less than or equal to the current level is found
+        while (
+          stack.length > 0 &&
+          indentationLevel <= stack[stack.length - 1].level
+        ) {
+          const stackItem = stack.pop();
+          if (stackItem) {
+            // Create a folding range from the start line of the popped item to the previous line
+            const foldingRange = new vscode.FoldingRange(
+              stackItem.startLine,
+              lineNumber - 1,
+              vscode.FoldingRangeKind.Region,
+            );
+            foldingRanges.push(foldingRange);
+          }
+        }
+        // Push the current level to the stack
+        stack.push({
+          level: indentationLevel,
+          startLine: stack[stack.length - 1].startLine,
+        });
+      }
+    }
+
+    // Create folding range for the last block
+    while (stack.length > 0) {
+      const stackItem = stack.pop();
+      if (stackItem) {
+        const foldingRange = new vscode.FoldingRange(
+          stackItem.startLine,
+          document.lineCount - 1,
+          vscode.FoldingRangeKind.Region,
+        );
+        foldingRanges.push(foldingRange);
+      }
+    }
+
+    return foldingRanges;
+  }
+}
+
+export { MyFoldingRangeProvider };
