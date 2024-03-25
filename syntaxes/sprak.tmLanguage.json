@@ -1,34 +1,74 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "Språk",
+  "name": "Sublime Sprak Syntax",
   "patterns": [
     {
-      "include": "#keywords"
+      "comment": "Comment",
+      "name": "comment.line.sprak",
+      "match": "(#).*"
     },
     {
-      "include": "#strings"
-    }
-  ],
-  "repository": {
-    "keywords": {
+      "comment": "Keyword",
+      "name": "keyword.control.sprak",
+      "match": "\\b((end )?if|(end )?select|(resume )?next|case|end|void|close|do|else|for|gosub|goto|loop|on|open|return|then|to|until|while)\\b"
+    },
+    {
+      "comment": "Operator",
+      "name": "keyword.operator.sprak",
+      "match": "(\\+|=|<|>|<>|AND|OR)"
+    },
+    {
+      "comment": "Function",
+      "name": "support.function.sprak",
+      "match": "\\b(OnHack|OnIntruder|Count|Range|GetIndexes|Remove|RemoveAll|HasIndex|Append|Type|Round|Int|Mod|Info|Random|GetUser|Name|Time|Width|Height|GetHour|GetMinute|Sleep|Quit|CharToInt|IntToChar|ClearText|Print|Say|PlaySound|Pitch|Sin|Cos|PrintS|Input|Line|Text|Rect|DisplayGraphics|Color|Repeat|HSVtoRGB|RGBToHSV|Lines|GetConnections|Slurp|Connect|DisconnectAll|StringContains|MovePerson|ZapPerson|RestoreCode|Broadcast|IsKeyPressed|HasFloppy|LoadData|ClearData|SaveData|BootFromFloppy|SetMhz|EnableAPI|SetMaxTime|Speed|Charisma|Smelliness|Sleepiness|Drunkenness|Drink|Corruption|IsUser|GetRoom|RemoteFunctionCall|Trippy|TurnLeft|TurnRight|FastForward|Move|QuickBoost|Unlock|Lock|Toggle|Blip|GetChannel|SetChannel|TurnOffSound|TurnOnSound|Log|Position|Teleport|SetWorldPosition)\\b"
+    },
+    {
+      "comment": "Numeric",
+      "name": "constant.numeric.sprak",
+      "match": "\\b(\\d(\\.\\d)?)+"
+    },
+    {
+      "comment": "Global",
+      "name": "constant.global.sprak",
+      "match": "\\b\\w+\\$"
+    },
+    {
+      "comment": "SUB",
+      "name": "meta.function.sprak",
+      "match": "^(\\w+):"
+    },
+    {
+      "comment": "Brace, round",
+      "name": "meta.brace.round.sprak",
+      "match": "[\\(\\)]"
+    },
+    {
+      "comment": "Brace, curly",
+      "name": "meta.brace.curly.sprak",
+      "match": "[\\{\\}]"
+    },
+    {
+      "comment": "Array",
+      "name": "other.array.sprak",
+      "begin": "(\\w+\\()",
+      "end": "(\\))",
       "patterns": [
         {
-          "name": "keyword.control.sprak",
-          "match": "\\b(if|while|for|return)\\b"
+          "include": "$self"
         }
       ]
     },
-    "strings": {
+    {
+      "comment": "String, double-quoted",
       "name": "string.quoted.double.sprak",
-      "begin": "\"",
-      "end": "\"",
-      "patterns": [
-        {
-          "name": "constant.character.escape.sprak",
-          "match": "\\\\."
-        }
-      ]
+      "match": "\"[^\"]*\""
+    },
+    {
+      "comment": "String, single-quoted",
+      "name": "string.quoted.single.sprak",
+      "match": "'[^']*'"
     }
-  },
+  ],
+  "repository": {},
   "scopeName": "source.sprak"
 }
