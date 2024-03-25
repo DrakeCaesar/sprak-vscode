@@ -37,27 +37,31 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
         ): vscode.TextEdit[] {
           const edits: vscode.TextEdit[] = [];
           let indentLevel = 0;
-          const indentSize = 1; // Set the size of an indent (number of spaces)
+          const indentSize = 1; // This could be adjusted as needed
 
           for (let i = 0; i < document.lineCount; i++) {
             const lineText = document.lineAt(i).text;
             const trimmedLine = lineText.trim();
 
-            // Decrease indent level if the line starts with 'end' or 'else'
+            // Decrease indent level for 'end' or 'else' lines but delay the change until after processing the current line
             if (trimmedLine.match(/^(end|else)/)) {
               indentLevel = Math.max(indentLevel - 1, 0);
             }
 
-            // Create edit for current line
-            const indentText = " ".repeat(indentLevel * indentSize);
+            // Adjust the indentation of the current line based on the current indent level
             edits.push(
               vscode.TextEdit.replace(
-                new vscode.Range(i, 0, i, lineText.length),
-                indentText + trimmedLine,
+                new vscode.Range(
+                  i,
+                  0,
+                  i,
+                  document.lineAt(i).firstNonWhitespaceCharacterIndex,
+                ),
+                " ".repeat(indentLevel * indentSize),
               ),
             );
 
-            // Logic to increase indentation
+            // Increase indent level for lines that start a block structure
             if (shouldIncreaseIndent(trimmedLine)) {
               indentLevel++;
             }
@@ -72,25 +76,11 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
 }
 
 function shouldIncreaseIndent(line: string): boolean {
-  // Increase indent level for function definitions and control structures
-  const functionDefinitionRegex =
-    /^(var\s+\w+\s*\(.*\))|(\w+\s+\w+\s*\(.*\))\s*$/;
-  const controlStructureRegex = /\b(if|loop|else)\b/;
-
-  // Check if it's a function definition or a control structure not followed by "end"
-  if (
-    functionDefinitionRegex.test(line) ||
-    (controlStructureRegex.test(line) && !line.includes("end"))
-  ) {
-    return true;
-  }
-
-  // Special case for variable declarations that look like function calls
-  if (line.startsWith("var ") && line.includes("=")) {
-    return false;
-  }
-
-  return false;
+  // Regex to match function definitions and control structures that typically start blocks
+  const startBlockRegex =
+    /^(var\s+\w+\s*\(.*\))|(\w+\s+\w+\s*\(.*\))\s*$|\bif\b|\belse if\b|\belse\b|\bloop\b/;
+  // Increase indent if it's a function definition, control structure
+  return startBlockRegex.test(line) && !line.includes("end");
 }
 
 function deactivate() {}
