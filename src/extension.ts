@@ -43,7 +43,7 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
             const lineText = document.lineAt(i).text;
             const trimmedLine = lineText.trim();
 
-            // Decrease indent level if the line ends with 'end'
+            // Decrease indent level if the line starts with 'end' or 'else'
             if (trimmedLine.match(/^(end|else)/)) {
               indentLevel = Math.max(indentLevel - 1, 0);
             }
@@ -57,11 +57,8 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
               ),
             );
 
-            // Increase indent level if the line ends with a control structure keyword followed by something other than 'end'
-            if (
-              trimmedLine.match(/\b(if|loop)\b/) &&
-              !trimmedLine.includes("end")
-            ) {
+            // Logic to increase indentation
+            if (shouldIncreaseIndent(trimmedLine)) {
               indentLevel++;
             }
           }
@@ -72,6 +69,28 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
 
     context.subscriptions.push(formatterProvider);
   });
+}
+
+function shouldIncreaseIndent(line: string): boolean {
+  // Increase indent level for function definitions and control structures
+  const functionDefinitionRegex =
+    /^(var\s+\w+\s*\(.*\))|(\w+\s+\w+\s*\(.*\))\s*$/;
+  const controlStructureRegex = /\b(if|loop|else)\b/;
+
+  // Check if it's a function definition or a control structure not followed by "end"
+  if (
+    functionDefinitionRegex.test(line) ||
+    (controlStructureRegex.test(line) && !line.includes("end"))
+  ) {
+    return true;
+  }
+
+  // Special case for variable declarations that look like function calls
+  if (line.startsWith("var ") && line.includes("=")) {
+    return false;
+  }
+
+  return false;
 }
 
 function deactivate() {}
