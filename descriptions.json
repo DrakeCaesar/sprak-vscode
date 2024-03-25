@@ -1,5 +1,0 @@
-{
-  "OnHack": "Performs an action when a hack occurs. void OnHack(string name)",
-  "Count": "Counts the number of elements in an array. Count(array)",
-  "Range": "Creates a range of numbers. Range(min, max)"
-}
