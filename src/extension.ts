@@ -29,6 +29,7 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
 
     context.subscriptions.push(hoverProvider);
 
+    // Register the formatter
     const formatterProvider =
       vscode.languages.registerDocumentFormattingEditProvider("sprak", {
         provideDocumentFormattingEdits(
@@ -36,59 +37,33 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
         ): vscode.TextEdit[] {
           const edits: vscode.TextEdit[] = [];
           let indentLevel = 0;
-          const indentSize = 1; // Adjust as needed
+          const indentSize = 2; // This could be adjusted as needed
 
           for (let i = 0; i < document.lineCount; i++) {
             const lineText = document.lineAt(i).text;
             const trimmedLine = lineText.trim();
 
-            // Handle increase for starting blocks
-            if (shouldIncreaseIndent(trimmedLine)) {
-              edits.push(
-                vscode.TextEdit.replace(
-                  new vscode.Range(
-                    i,
-                    0,
-                    i,
-                    document.lineAt(i).firstNonWhitespaceCharacterIndex,
-                  ),
-                  " ".repeat(indentLevel * indentSize),
-                ),
-              );
-              indentLevel++;
-            }
-            // Special handling for continuous blocks like 'else if' or 'else'
-            else if (trimmedLine.startsWith("else")) {
-              edits.push(
-                vscode.TextEdit.replace(
-                  new vscode.Range(
-                    i,
-                    0,
-                    i,
-                    document.lineAt(i).firstNonWhitespaceCharacterIndex,
-                  ),
-                  " ".repeat(indentLevel * indentSize),
-                ),
-              );
-            }
-            // Default handling for lines not explicitly increasing or maintaining block level
-            else {
-              edits.push(
-                vscode.TextEdit.replace(
-                  new vscode.Range(
-                    i,
-                    0,
-                    i,
-                    document.lineAt(i).firstNonWhitespaceCharacterIndex,
-                  ),
-                  " ".repeat(indentLevel * indentSize),
-                ),
-              );
+            // Decrease indent level for 'end' or 'else' lines but delay the change until after processing the current line
+            if (trimmedLine.match(/^(end|else)/)) {
+              indentLevel = Math.max(indentLevel - 1, 0);
             }
 
-            // Handle decrease after processing 'end' or 'else' block lines
-            if (trimmedLine === "end" || trimmedLine.startsWith("else")) {
-              indentLevel = Math.max(indentLevel - 1, 0);
+            // Adjust the indentation of the current line based on the current indent level
+            edits.push(
+              vscode.TextEdit.replace(
+                new vscode.Range(
+                  i,
+                  0,
+                  i,
+                  document.lineAt(i).firstNonWhitespaceCharacterIndex,
+                ),
+                " ".repeat(indentLevel * indentSize),
+              ),
+            );
+
+            // Increase indent level for lines that start a block structure
+            if (shouldIncreaseIndent(trimmedLine)) {
+              indentLevel++;
             }
           }
 
@@ -101,8 +76,12 @@ function activate(context: { subscriptions: vscode.Disposable[] }) {
 }
 
 function shouldIncreaseIndent(line: string): boolean {
-  // Match starting of blocks or control structures
-  return line.startsWith("if") || line.startsWith("loop");
+  // Regex to match function definitions and control structures that typically start blocks
+  const startBlockRegex =
+    /^((string|void|var|number|array|bool)\s+\w+\s*\(.*\))|^if[(\s]|^else if[(\s]|^else(\s.*|$)|^loop(\s.*|$)/;
+
+  // Increase indent if it's a function definition, control structure
+  return startBlockRegex.test(line);
 }
 
 function deactivate() {}
