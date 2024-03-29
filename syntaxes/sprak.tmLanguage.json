@@ -10,7 +10,7 @@
     {
       "comment": "Keyword",
       "name": "keyword.control.sprak",
-      "match": "\\b((end )?if|(end )?select|(resume )?next|case|end|void|close|do|else|for|gosub|goto|loop|on|open|return|then|to|until|while)\\b"
+      "match": "\\b((end )?if|(end )?select|(resume )?next|case|end|void|close|do|else|for|gosub|goto|loop|on|open|return|then|to|until|while|in)\\b"
     },
     {
       "comment": "Operator",
@@ -34,7 +34,7 @@
     },
     {
       "comment": "Data Types",
-      "name": "storage.type.sprak",
+      "name": "support.type.primitive.sprak",
       "match": "\\b(string|void|var|number|array|bool)\\b"
     },
     {

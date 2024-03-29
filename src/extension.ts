@@ -121,7 +121,7 @@ function processLineContent(line: string): string {
   }
 
   // Remove trailing spaces from the result and then append the comment (if any)
-  result = result.replace(/\s+$/, "");
+  result = result.replace(/[\t ]+$/, "");
   if (foundComment) {
     // Ensure we're not adding extra spaces before the comment if the result is empty
     if (result !== "") {
